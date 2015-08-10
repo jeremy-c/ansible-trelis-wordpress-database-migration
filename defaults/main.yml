@@ -1,0 +1,27 @@
+
+# If you use the "rsync" strategy:
+# - you can set a timeout for the synchonize module
+project_deploy_synchronize_timeout: 30
+# - you can also delete files that don't exist on source after synchronizing
+project_deploy_synchronize_delete: false
+
+# Run database dump om local development machine
+local_db_dump:
+   - path: "."
+     cmd: vagrant ssh -- 'cd {{ www_root }}/{{ project.development.name }}/current && wp db export ./sql-dump-{{ project.development.db_name }}.sql'
+
+# All the database files to copy to the remote system on deploy.
+upload_local_db_to_remote_host:
+   - name: local database dump
+     src: "{{ project.local_path }}/sql-dump-{{ project.development.db_name }}.sql"
+     dest: "sql-dump-{{ project.development.db_name }}.sql"
+
+# Backup db, import local db to remote host, and search-replace domain references.
+remote_db_backup:
+  - cmd: "wp db export ./sql-dump-{{ project.env.db_name }}.sql"
+
+# Import local db to remote host, and search-replace domain references.
+migrate_local_db_to_remote_db:
+  - cmd: "wp db import ./sql-dump-{{ project.development.db_name }}.sql"
+  - cmd: "wp search-replace {{ project.development.wp_home }} {{ project.env.wp_home }}"
+#  - cmd: wp core update-db

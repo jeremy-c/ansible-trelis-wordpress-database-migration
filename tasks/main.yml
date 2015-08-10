@@ -1,0 +1,26 @@
+---
+
+- name: Database dump local Ansible host
+  local_action: "command {{ item.cmd }}"
+  args:
+    chdir: "{{ item.path }}"
+  with_items: local_db_dump
+
+- name: Move database backup to remote host
+  synchronize: src="{{ item.src }}" dest="{{ project_root }}/current/{{ item.dest }}"
+  with_items: upload_local_db_to_remote_host
+
+- name: Backup remote DB
+  command: "{{ item.cmd }}"
+  args:
+    chdir: "{{ project_root }}/current"
+  with_items: remote_db_backup
+
+- name: Run migrate_local_db_to_remote_db
+  command: "{{ item.cmd }}"
+  args:
+    chdir: "{{ project_root }}/current"
+  with_items: migrate_local_db_to_remote_db
+
+- debug:
+    msg: "local DB {{ project.development.db_name }} migrated to remote DB {{ project.env.db_name }}"
